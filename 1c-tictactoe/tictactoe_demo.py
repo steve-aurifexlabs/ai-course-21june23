@@ -1,19 +1,46 @@
 import random
+import time
+import json
 
 import torch
 from torch import nn
 
+log = []
+start_time = time.time()
+def now():
+    return repr((time.time() - start_time) * 1000) + 'ms'
+
+class RecordingLinear(nn.Module):
+    def __init__(self, input_dimensions, output_dimensions, id):
+        super().__init__()
+        self.linear = nn.Linear(input_dimensions, output_dimensions)
+
+    def forward(self, x):
+        y = self.linear(x)
+
+        log.append({
+            'timestamp': now(),
+            'type': 'forward_linear',
+            'id': id,
+            'x': x,
+            'y': y,
+        })
+        
+        return y
+
 
 def train():
+    global log
+    
     # Select the best local hardware (GPU or CPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('Device: ', device)
 
     # Define the model layers
     model = nn.Sequential(
-        nn.Linear(27, 10),
+        RecordingLinear(27, 10, 'input_layer'),
         nn.ReLU(),
-        nn.Linear(10, 3)
+        RecordingLinear(10, 3, 'output_layer')
     )
     model.to(device)
 
@@ -21,7 +48,10 @@ def train():
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
-    for sample_index in range(20000):
+    for sample_index in range(20):
+        global i
+        i = 0
+
         # Play a random game of Tic-Tac-Toe
         board, winner, reason = generate_sample()
 
@@ -44,11 +74,22 @@ def train():
         loss.backward()
 
         # Adjust the weights (and biases)
+        start_parameters = list(model.parameters())
         optimizer.step()
+        adjusted_parameters = list(model.parameters())
 
         # Print the loss
-        if sample_index % 1000 == 0:
+        if sample_index % 1 == 0:
             print(sample_index, ' Loss: ', loss.item())
+
+        log.append({
+            'timestamp': now(),
+            'type': 'sample_processed',
+            'start_parameters': start_parameters,
+            'adjusted_parameters': adjusted_parameters,
+            'loss': loss,
+            'gradients': [x.grad for x in model.parameters()],
+        })
 
 def prepare_sample(board, winner, reason):
     input = []
@@ -152,3 +193,4 @@ def generate_sample():
 
 if __name__ == '__main__':
     train()
+    print(log)
