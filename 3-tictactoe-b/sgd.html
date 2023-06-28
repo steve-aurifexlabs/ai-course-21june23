@@ -73,7 +73,7 @@ while True:
     
 </div>
 </div>
-<canvas width="3800" height="900"></canvas>
+<canvas width="4000" height="900"></canvas>
 
 <script type="module">
     var canvas = document.querySelector('canvas')
@@ -108,6 +108,7 @@ while True:
         c.fillText('Biases', 3200, 30)
         c.fillText('Predicted', 3400, 30)
         c.fillText('Actual', 3600, 30)
+        c.fillText('Loss', 3800, 30)
 
         var input = log[index * 3].x[0]
         input.forEach(function(value, i) {
@@ -232,6 +233,10 @@ while True:
 
             c.fillText(scalar.toFixed(2), 3600, 250 + 30 * i)
         })
+
+        c.fillStyle = '#000'
+        c.font = '25px serif'
+        c.fillText(data.loss.toFixed(2), 3800, 250)
     }
 
     tick()
